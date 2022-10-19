@@ -19,6 +19,7 @@ func main() {
 }
 
 func start(router *httprouter.Router) {
+	log.Println("start app")
 	listener, err := net.Listen("tcp", ":1234")
 	if err != nil {
 		panic(err)
