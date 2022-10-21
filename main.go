@@ -2,7 +2,9 @@ package main
 
 import (
 	"avito/internal/client"
+	"avito/internal/config"
 	"avito/pkg/logging"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"net"
 	"net/http"
@@ -14,17 +16,20 @@ func main() {
 	logger.Info("create router")
 	router := httprouter.New()
 
+	cfg := config.GetConfig()
+
 	handler := client.NewHandler(logger)
 	handler.Register(router)
 	logger.Info("register client handler")
 
-	start(router)
+	start(router, cfg)
 }
 
-func start(router *httprouter.Router) {
+func start(router *httprouter.Router, cfg *config.Config) {
 	logger := logging.GetLogger()
 	logger.Info("start app")
-	listener, err := net.Listen("tcp", ":1234")
+	listener, err := net.Listen("tcp",
+		fmt.Sprintf("%s:%s", cfg.Listen.BindIP, cfg.Listen.Port))
 	if err != nil {
 		panic(err)
 	}
@@ -34,6 +39,6 @@ func start(router *httprouter.Router) {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
-	logger.Info("start server on :1234")
+	logger.Infof("start server on port %s:%s", cfg.Listen.BindIP, cfg.Listen.Port)
 	logger.Fatalln(server.Serve(listener))
 }
