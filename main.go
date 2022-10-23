@@ -1,9 +1,12 @@
 package main
 
 import (
-	"avito/internal/client"
 	"avito/internal/config"
+	"avito/internal/transport"
+	userDb "avito/internal/user/db"
+	"avito/pkg/client/postgresql"
 	"avito/pkg/logging"
+	"context"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"net"
@@ -18,9 +21,16 @@ func main() {
 
 	cfg := config.GetConfig()
 
-	handler := client.NewHandler(logger)
+	postgreSQLClient, err := postgresql.NewClient(context.TODO(), 3, cfg.Storage)
+	if err != nil {
+		logger.Fatalf("%v", err)
+	}
+
+	repository := userDb.NewRepository(postgreSQLClient, logger, postgreSQLClient)
+
+	handler := transport.NewHandler(logger, repository)
 	handler.Register(router)
-	logger.Info("register client handler")
+	logger.Info("register user handler")
 
 	start(router, cfg)
 }
