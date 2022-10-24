@@ -10,3 +10,11 @@ CREATE TABLE public.reserve (
    service_id INT  NOT NULL,
    order_id INT  NOT NULL
 );
+
+
+CREATE TABLE public.accounting (
+      client_id INT,
+      reserve_sum DOUBLE PRECISION NOT NULL,
+      service_id INT  NOT NULL,
+      order_id INT  NOT NULL
+);

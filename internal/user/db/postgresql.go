@@ -16,11 +16,45 @@ type repository struct {
 	pool   *pgxpool.Pool
 }
 
-type reserve struct {
-	ID        int     `json:"id"`
-	Cost      float64 `json:"cost"`
-	OrderId   int     `json:"orderId"`
-	ServiceId int     `json:"serviceId"`
+func (r *repository) RevenueRecognition(userId int, sum float64, serviceId int, orderId int) error {
+	exists := r.checkClient(userId)
+	if !exists {
+		return errors.New("user not found")
+	}
+	var err error
+	//var balance float64
+	tx, err := r.pool.Begin(context.Background())
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(context.Background())
+		}
+	}()
+
+	_, err = r.client.Exec(context.Background(), `INSERT INTO accounting 
+SELECT * FROM reserve WHERE client_id = $1 AND reserve_sum = $2 AND service_id = $3
+AND  order_id = $4`, userId, sum, serviceId, orderId)
+	if err != nil {
+		return err
+	}
+	_, err = r.client.Exec(context.Background(), `DELETE FROM reserve WHERE client_id = $1
+                AND reserve_sum = $2 AND service_id = $3 AND  order_id = $4`, userId, sum, serviceId, orderId)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) GetBalance(userId int) (float64, error) {
+	exists := r.checkClient(userId)
+	if !exists {
+		return 0, errors.New("user not found")
+	}
+	var balance float64
+	row := r.client.QueryRow(context.Background(), `SELECT balance FROM client WHERE id = $1`, userId)
+	_ = row.Scan(&balance)
+
+	return balance, nil
 }
 
 func (r *repository) ReserveAmount(userId int, sum float64, serviceId int, orderId int) error {
@@ -40,7 +74,6 @@ func (r *repository) ReserveAmount(userId int, sum float64, serviceId int, order
 	row := r.client.QueryRow(context.Background(), `SELECT balance FROM client WHERE id = $1`, userId)
 	_ = row.Scan(&balance)
 	if balance < sum {
-		fmt.Println("Not enough money")
 		return errors.New("not enough money")
 	}
 
@@ -51,15 +84,6 @@ func (r *repository) ReserveAmount(userId int, sum float64, serviceId int, order
 
 	_, err = r.client.Exec(context.Background(), `INSERT INTO reserve (client_id, reserve_sum, service_id, order_id) 
 VALUES ($1, $2,$3,$4)`, userId, sum, serviceId, orderId)
-
-	//var exists bool
-	//_ = row.Scan(&exists)
-	//
-	//if !exists {
-	//	_, err = r.client.Exec(context.Background(), "INSERT INTO client (id,balance) VALUES ($1,$2)", userId, sum)
-	//} else {
-	//	_, err = r.client.Exec(context.Background(), "UPDATE client SET balance = balance + $1 WHERE id = $2", sum, userId)
-	//}
 
 	if err != nil {
 		fmt.Println(err)

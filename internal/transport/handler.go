@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	transferURL = "/IncrementBalance/clientBalance"
-	reserveURL  = "/reserveAmount"
+	transferURL           = "/IncrementBalance/clientBalance"
+	reserveURL            = "/reserveAmount"
+	getBalanceURL         = "/getUserBalance/:id"
+	revenueRecognitionURL = "/revenue"
 )
 
 type handler struct {
@@ -27,5 +29,6 @@ func NewHandler(logger *logging.Logger, repository user.Repository) handlers.Han
 func (h *handler) Register(router *httprouter.Router) {
 	router.POST(transferURL, h.IncrementBalance)
 	router.POST(reserveURL, h.ReserveAmount)
-
+	router.GET(getBalanceURL, h.GetUserBalance)
+	router.POST(revenueRecognitionURL, h.RevenueRecognition)
 }
