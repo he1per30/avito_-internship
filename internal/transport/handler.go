@@ -12,6 +12,7 @@ const (
 	reserveURL            = "/reserveAmount"
 	getBalanceURL         = "/getUserBalance/:id"
 	revenueRecognitionURL = "/revenue"
+	getReportURL          = "/getReport"
 )
 
 type handler struct {
@@ -31,4 +32,5 @@ func (h *handler) Register(router *httprouter.Router) {
 	router.POST(reserveURL, h.ReserveAmount)
 	router.GET(getBalanceURL, h.GetUserBalance)
 	router.POST(revenueRecognitionURL, h.RevenueRecognition)
+	router.POST(getReportURL, h.GetReport)
 }

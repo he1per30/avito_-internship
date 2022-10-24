@@ -1,11 +1,15 @@
 package transport
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
 )
+
+type Response struct {
+	UserBalance float64 `json:"userBalance"`
+}
 
 func (h *handler) GetUserBalance(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	userId := params.ByName("id")
@@ -23,5 +27,13 @@ func (h *handler) GetUserBalance(w http.ResponseWriter, r *http.Request, params 
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("userBalance: %g", balance)))
+	var Response Response
+	Response.UserBalance = balance
+	b, err := json.Marshal(&Response)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid msg " + err.Error()))
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(b)
 }

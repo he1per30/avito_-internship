@@ -4,6 +4,7 @@ import (
 	"avito/internal/config"
 	"avito/internal/transport"
 	userDb "avito/internal/user/db"
+
 	"avito/pkg/client/postgresql"
 	"avito/pkg/logging"
 	"context"
@@ -33,6 +34,7 @@ func main() {
 	logger.Info("register user handler")
 
 	start(router, cfg)
+
 }
 
 func start(router *httprouter.Router, cfg *config.Config) {
@@ -51,4 +53,5 @@ func start(router *httprouter.Router, cfg *config.Config) {
 	}
 	logger.Infof("start server on port %s:%s", cfg.Listen.BindIP, cfg.Listen.Port)
 	logger.Fatalln(server.Serve(listener))
+
 }

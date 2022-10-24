@@ -4,16 +4,46 @@ import (
 	"avito/internal/user"
 	"avito/pkg/client/postgresql"
 	"avito/pkg/logging"
+	repeatable "avito/pkg/utils"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"time"
 )
 
 type repository struct {
 	client postgresql.Client
 	logger *logging.Logger
 	pool   *pgxpool.Pool
+}
+
+type ReportStruct struct {
+	ServiceId int
+	Sum       int
+}
+
+func (r *repository) GetReport(year, month string, serviceId int) error {
+	var Report []ReportStruct
+	rows, _ := r.client.Query(context.Background(), `SELECT service_id, SUM(sum) FROM report WHERE EXTRACT(YEAR FROM date) = 2022 
+GROUP BY service_id;`)
+
+	for rows.Next() {
+		var row ReportStruct
+		_ = rows.Scan(
+			&row.ServiceId,
+			&row.Sum,
+		)
+		Report = append(Report, row)
+	}
+
+	var testString []string
+	for _, record := range Report {
+		recordString := fmt.Sprintf("Service: %d; Total Amount: %d", record.ServiceId, record.Sum)
+		testString = append(testString, recordString)
+	}
+	repeatable.WriteInCSV(testString)
+	return nil
 }
 
 func (r *repository) RevenueRecognition(userId int, sum float64, serviceId int, orderId int) error {
@@ -42,6 +72,22 @@ AND  order_id = $4`, userId, sum, serviceId, orderId)
 	if err != nil {
 		return err
 	}
+
+	err = r.makeReport(serviceId, sum)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) makeReport(serviceId int, cost float64) error {
+	dt := time.Now()
+	_, err := r.client.Exec(context.Background(), `INSERT INTO report  (service_id, sum, date) 
+VALUES ($1, $2,$3)`, serviceId, cost, dt)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -18,3 +18,10 @@ CREATE TABLE public.accounting (
       service_id INT  NOT NULL,
       order_id INT  NOT NULL
 );
+
+
+CREATE TABLE public.report (
+      service_id INT  NOT NULL,
+      sum INT,
+      date DATE
+);
